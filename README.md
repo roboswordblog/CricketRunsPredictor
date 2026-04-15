@@ -7,4 +7,4 @@ You can help update the database by forking this and updating the database and r
 I use sklearn for splitting the trianing data.
 I am new to this, so it kinda sucks.
 Don't judge.
-youtube.com/@RoboswordCodes
+
