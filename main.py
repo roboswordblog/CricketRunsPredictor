@@ -5,6 +5,10 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 df = pd.read_csv("cricket.csv")
+df = df.drop(columns=[
+    'Span', 'Inns', 'NO', 'HS',
+    'BF', 'SR', '100', '50', '0', '4s', '6s'
+])
 # clean the data
 
 class Model(nn.Module):
@@ -19,6 +23,12 @@ class Model(nn.Module):
 #        x = F.relu(self.fc2(x))
         x = self.out(x)
         return x
+
+def getData():
+    pass
+
+X = []
+y = []
 
 torch.manual_seed(41)
 model = Model()
