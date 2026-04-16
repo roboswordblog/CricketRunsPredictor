@@ -1,6 +1,7 @@
 import pandas as pd
 from sklearn.model_selection import train_test_split
 import torch
+import numpy as np
 import torch.nn as nn
 import torch.nn.functional as F
 from sklearn.preprocessing import StandardScaler
@@ -39,7 +40,7 @@ class Model(nn.Module):
 
 def getData(name):
     index = (df['Player'] == name).idxmax()
-    return df.iloc[index].drop('Player').tolist()
+    return df.iloc[index].drop(['Player', "Runs", "RPM"]).tolist()
 
 def getRuns(name):
     index = (df['Player'] == name).idxmax()
@@ -89,3 +90,11 @@ with torch.no_grad():
 
     print("R2 Score:", r2.item())
     print("MAE:", mae.item())
+with torch.no_grad():
+    raw = np.array(getData(input("player name: ")), dtype=float)
+    raw = raw.reshape(1, -1)
+    raw = scaler.transform(raw)
+    x = torch.tensor(raw, dtype=torch.float32)
+    test_pred = model(x)
+
+    print(test_pred.item())
