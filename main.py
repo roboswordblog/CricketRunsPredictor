@@ -6,10 +6,11 @@ import torch.nn.functional as F
 
 df = pd.read_csv("cricket.csv")
 df = df.drop(columns=[
-    'Span', 'Inns', 'NO', 'HS',
-    'BF', 'SR', '100', '50', '0', '4s', '6s'
+    'Span', 'NO', 'HS',
+    'SR', '100', '50', '0', '4s', '6s'
 ])
-# clean the data
+df['BFI'] = df['BF'] / df['Inns']
+df = df.drop("BF", "Inns")
 
 class Model(nn.Module):
     def __init__(self):
