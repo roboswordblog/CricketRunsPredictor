@@ -3,28 +3,37 @@ from sklearn.model_selection import train_test_split
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
+from sklearn.preprocessing import StandardScaler
 df = pd.read_csv("cricket.csv")
 df = df.drop(columns=[
-    'Span', 'NO', 'HS',
-    'SR', '100', '50', '0', '4s', '6s', "a"
+        'a',
+    'Unnamed: 15'
 ])
 for col in df.columns:
     if col != "Player":
         df[col] = pd.to_numeric(df[col], errors='coerce')
+df = df.fillna(0)
 df['BFI'] = df['BF'] / df['Inns']
 df = df.drop(["BF", "Inns"], axis=1)
-
+df["RPM"] = df["Runs"] / df["Mat"]
 class Model(nn.Module):
     def __init__(self):
         super().__init__()
-        self.fc1 = nn.Linear(4, 16) # Strike rate, BFI, total matches played 
-        self.fc2 = nn.Linear(16, 16)
+        self.fc1 = nn.Linear(12, 32)
+        self.fc2 = nn.Linear(32, 32)
+        self.fc3 = nn.Linear(32, 16)
         self.out = nn.Linear(16, 1)
+
+        self.dropout = nn.Dropout(0.2)
 
     def forward(self, x):
         x = F.relu(self.fc1(x))
-#        x = F.relu(self.fc2(x))
+        x = self.dropout(x)
+
+        x = F.relu(self.fc2(x))
+        x = self.dropout(x)
+
+        x = F.relu(self.fc3(x))
         x = self.out(x)
         return x
 
@@ -35,14 +44,20 @@ def getData(name):
 def getRuns(name):
     index = (df['Player'] == name).idxmax()
     return df.iloc[index]["Runs"]
-    
-X = df.drop(columns=["Player", "Runs"]).values
-y = df["Runs"].values
 
+def r2_score(preds, targets):
+    ss_res = torch.sum((targets - preds) ** 2)
+    ss_tot = torch.sum((targets - torch.mean(targets)) ** 2)
+    return 1 - ss_res / ss_tot
+
+X = df.drop(columns=["Player", "Runs", "RPM"]).values
+y = df["RPM"].values
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
+scaler = StandardScaler()
+X_train = scaler.fit_transform(X_train)
+X_test = scaler.transform(X_test)
 X_train = torch.tensor(X_train, dtype=torch.float32)
 X_test = torch.tensor(X_test, dtype=torch.float32)
-
 y_train = torch.tensor(y_train, dtype=torch.float32).view(-1, 1)
 y_test = torch.tensor(y_test, dtype=torch.float32).view(-1, 1)
 
@@ -67,4 +82,6 @@ for i in range(epochs):
 
 with torch.no_grad():
     test_pred = model(X_test)
-    test_loss = criterion(test_pred, y_test)
+    r2 = r2_score(test_pred, y_test)
+
+    print("R2 Score:", r2.item())
