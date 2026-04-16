@@ -14,12 +14,12 @@ for col in df.columns:
         df[col] = pd.to_numeric(df[col], errors='coerce')
 df = df.fillna(0)
 df['BFI'] = df['BF'] / df['Inns']
-df = df.drop(["BF", "Inns"], axis=1)
+# df = df.drop(["BF", "Inns"], axis=1)
 df["RPM"] = df["Runs"] / df["Mat"]
 class Model(nn.Module):
     def __init__(self):
         super().__init__()
-        self.fc1 = nn.Linear(12, 32)
+        self.fc1 = nn.Linear(14, 32)
         self.fc2 = nn.Linear(32, 32)
         self.fc3 = nn.Linear(32, 16)
         self.out = nn.Linear(16, 1)
@@ -49,7 +49,8 @@ def r2_score(preds, targets):
     ss_res = torch.sum((targets - preds) ** 2)
     ss_tot = torch.sum((targets - torch.mean(targets)) ** 2)
     return 1 - ss_res / ss_tot
-
+def mae_score(preds, targets):
+    return torch.mean(torch.abs(targets - preds))
 X = df.drop(columns=["Player", "Runs", "RPM"]).values
 y = df["RPM"].values
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
@@ -67,7 +68,7 @@ model = Model()
 criterion = nn.MSELoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 
-epochs = 100
+epochs = 500
 
 for i in range(epochs):
     y_pred = model(X_train)
@@ -82,6 +83,9 @@ for i in range(epochs):
 
 with torch.no_grad():
     test_pred = model(X_test)
+
     r2 = r2_score(test_pred, y_test)
+    mae = mae_score(test_pred, y_test)
 
     print("R2 Score:", r2.item())
+    print("MAE:", mae.item())
